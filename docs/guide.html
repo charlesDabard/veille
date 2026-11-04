@@ -686,244 +686,249 @@ d'après ma veille, qu'est-ce qui a changé sur les agents cet automne ?</code><
       const NOEUDS = [
         {
           id: "toi",
-          court: "Toi",
           c: "decl",
           e: "depot",
+          court: "Toi",
           nom: "Toi",
-          d: "Dans ton agent, tu écris /veille <sujet>, « cherche dans ma veille … » ou « lint ma veille ». Le skill demande toujours quelles sources activer avant de récolter.",
+          d: "Tu écris dans ton agent : « /veille serveurs MCP », « fais une veille sur … », « cherche dans ma veille … » ou « lint ma veille ». Le skill te répond par une question à choix multiples, tu coches les sources et les items qui t'intéressent, et il travaille. Tu peux aussi coller des URLs de tweets ou de vidéos dans le même message : elles arrivent comme sources déjà choisies.",
           p: "skill/SKILL.md",
         },
         {
           id: "launchd",
-          court: "launchd",
           c: "decl",
           e: "extras",
+          court: "launchd",
           nom: "launchd",
-          d: "L'ordonnanceur de macOS. Le modèle fourni lance une récolte par jour, sans process résident. Sans lui, tout se lance à la main.",
+          d: "L'ordonnanceur de macOS. Le dépôt fournit un modèle de tâche qui lance la récolte une fois par jour, à l'heure que tu choisis. Sans lui, tu lances tout à la main et rien n'est prêt le matin. Ce n'est pas un daemon : rien ne reste en mémoire entre deux déclenchements, macOS réveille la tâche puis la laisse s'éteindre.",
           p: "skill/extras/automatisation/veille-loop.plist.example",
         },
         {
-          id: "hook",
-          court: "hook",
-          c: "decl",
-          e: "perso",
-          nom: "pre-commit",
-          d: "Un hook git posé sur la base : il refuse une note sans front-matter complet, ou une ligne ajoutée avec un tiret cadratin. Garde-fou d'écriture personnel, pas livré ici.",
-        },
-        {
           id: "webhook",
-          court: "iPhone",
           c: "decl",
           e: "perso",
-          nom: "Raccourci",
-          d: "Un Raccourci qui ajoute une URL à un fichier iCloud, que launchd surveille : la vidéo envoyée depuis le téléphone passe en tête de la récolte du matin. Bricolage personnel.",
+          court: "iPhone",
+          nom: "Raccourci iPhone",
+          d: "Un Raccourci qui écrit une URL dans un fichier iCloud. launchd surveille ce fichier : la vidéo que tu partages depuis ton téléphone entre donc en tête de la récolte suivante, sans que tu ouvres un terminal. Bricolage personnel de l'auteur, absent du dépôt.",
         },
         {
           id: "daemon",
-          court: "Daemon",
           c: "decl",
           e: "perso",
+          court: "daemon",
           nom: "Daemon",
-          d: "Aucun process résident, et c'est voulu : pour une récolte quotidienne, un déclencheur de fichier suffit.",
+          d: "Aucun process résident, et c'est un choix : pour une récolte quotidienne, un déclencheur de fichier suffit et ne consomme rien entre deux runs. Un daemon n'apporterait qu'une chose à surveiller, donc une panne de plus.",
         },
 
         {
           id: "skill",
-          court: "Skill",
           c: "cerv",
           e: "depot",
+          court: "skill",
           nom: "Skill veille",
-          d: "Le chef d'orchestre : choix des sources, sélection humaine des items, distillation, synthèse par sujet. Trois modes, récolter, chercher, linter.",
+          d: "Le chef d'orchestre, et le seul fichier à lire pour comprendre l'outil. Il demande quelles sources activer, dérive les requêtes du sujet, te montre les titres trouvés, attend ta sélection, lance les récolteurs, distille chaque item en une note française, puis réécrit la synthèse du sujet. Trois modes : récolter, chercher, linter. C'est lui qui décide, les scripts ne font qu'exécuter.",
           p: "skill/SKILL.md",
         },
         {
           id: "loop",
-          court: "loop",
           c: "cerv",
           e: "extras",
+          court: "loop",
           nom: "veille-loop",
-          d: "Un agent autonome qui distille la récolte du matin sans toi, puis commite en local sans jamais pousser. Le modèle et les règles de permission sont à adapter à ton agent.",
+          d: "Un agent autonome qui rejoue la distillation sans toi : il prend la récolte déposée dans le staging, la transforme en notes, met à jour la synthèse, puis commite dans la base. Il ne pousse jamais. Le modèle, les règles de permission et l'heure de passage sont à adapter : tel quel, c'est la configuration de l'auteur.",
           p: "skill/extras/automatisation/loop-cron.sh",
         },
         {
           id: "lint",
-          court: "lint",
           c: "cerv",
           e: "depot",
+          court: "lint",
           nom: "Mode lint",
-          d: "Un contrôle de santé par sujet, en lecture seule : contradictions, affirmations périmées, notes orphelines, liens morts. C'est un mode du skill, pas un script séparé.",
+          d: "Un mode du skill, pas un script séparé. Il relit les notes d'un sujet et cherche quatre défauts : deux notes qui se contredisent, une affirmation devenue fausse, une note que plus aucune synthèse ne cite, un lien mort. Il n'écrit jamais dans les notes : il produit un rapport daté que tu lis et que tu arbitres.",
           p: "skill/SKILL.md",
         },
         {
           id: "doom",
-          court: "feed",
           c: "cerv",
           e: "perso",
+          court: "feed",
           nom: "Feed",
-          d: "Un feed tiré de la base, avec des analyses de fond et des brouillons de posts. Skill personnelle, pas dans ce dépôt.",
+          d: "Un feed quotidien tiré de la base, avec des analyses de fond et des brouillons de posts. Skill personnelle de l'auteur, elle n'est pas dans le dépôt.",
         },
         {
           id: "rs",
-          court: "réseau",
           c: "cerv",
           e: "perso",
+          court: "réseau",
           nom: "reseau-social",
-          d: "Le rafraîchissement des corpus de créateurs suivis, résumés puis envoyés par mail au-delà d'un seuil. Personnel, pas dans ce dépôt.",
+          d: "Le rafraîchissement des corpus de créateurs suivis : il récupère les nouveaux posts, les résume avec un modèle, et envoie un mail quand le volume dépasse un seuil. Personnel, absent du dépôt.",
         },
         {
           id: "agents",
-          court: "agents",
           c: "cerv",
           e: "depot",
+          court: "agents",
           nom: "Sous-agents",
-          d: "Les sous-agents de ton agent : un par sujet pour un run complet, un pour un chantier sur la base. Le skill décrit comment les découper, tu écris les tiens.",
+          d: "Un sous-agent, c'est un agent que ton agent principal lance à part, avec sa propre tâche et son propre contexte : il travaille pendant que tu fais autre chose, et il rend un résultat que l'agent principal relit. Ici, un sous-agent par sujet traite un run complet (récolte, distillation, synthèse) ; un autre type prend un chantier sur la base (corriger, fusionner, compléter). Le skill décrit comment les découper et ce qu'ils doivent rendre ; les fichiers de sous-agents, eux, s'écrivent dans ton agent.",
           p: "skill/SKILL.md",
         },
 
         {
           id: "yt",
-          court: "YouTube",
           c: "recol",
           e: "depot",
+          court: "YouTube",
           nom: "YouTube",
-          d: "ytkb (Rust) par-dessus yt-dlp : lister une chaîne, trier par date, prendre les transcripts, et gérer les cas où YouTube exige une session.",
+          d: "ytkb est un binaire Rust livré dans le dépôt, posé par-dessus yt-dlp. Il liste les dernières vidéos d'une chaîne, trie par date, écarte celles déjà ingérées, récupère le transcript, et gère les deux cas qui font échouer un run : YouTube qui exige une session (--cookies-from-browser) et YouTube qui sert un doublage (--lang en). Il écrit un JSON par vidéo et ne juge pas le contenu.",
           p: "ytkb/",
         },
         {
           id: "bili",
-          court: "bili",
           c: "recol",
           e: "extras",
+          court: "bili",
           nom: "Bilibili",
-          d: "yt-dlp y prend un 412 : il faut un outil dédié, puis whisper quand les sous-titres demandent un compte.",
+          d: "Bilibili refuse yt-dlp avec un 412 : il faut un outil dédié pour lister, puis whisper quand les sous-titres ne sont pas publics. Le script de récolte de l'auteur enchaîne les deux et plafonne le volume. Livré en l'état, non garanti hors de sa machine.",
           p: "skill/extras/automatisation/loop-harvest.sh",
         },
         {
           id: "x",
-          court: "X",
           c: "recol",
           e: "extras",
+          court: "X",
           nom: "X",
-          d: "X par URLs collées, via FxTwitter, gratuit et sans clé. La veille ne cherche pas sur X : tu colles les tweets qui t'intéressent.",
+          d: "X ne se cherche pas : tu colles les URLs des tweets qui t'intéressent. fx.mjs appelle FxTwitter, qui rend le tweet en JSON sans clé ni compte, et écrit le texte brut. Gratuit, mais dépend d'un service tiers qui peut fermer.",
           p: "skill/extras/fx.mjs",
         },
         {
           id: "web",
-          court: "Web",
           c: "recol",
           e: "depot",
+          court: "web",
           nom: "Web et flux",
-          d: "curl et deux scripts python : flux RSS et Atom, Google News, Hacker News, Reddit, GitHub. Aucune clé, aucune dépendance hors stdlib.",
+          d: "Le récolteur le plus simple, et le modèle à copier pour ajouter une source. fetch_feeds.py lit ta liste de flux, interroge chaque URL, et sort un TSV d'une ligne par item : date, source, titre, URL, résumé de 300 caractères. rss2ndjson.py fait le même travail en NDJSON pour un flux isolé. Aucune clé, aucune dépendance hors de la bibliothèque standard.",
           p: "skill/fetch_feeds.py",
         },
         {
           id: "intl",
-          court: "RU·KR·CN",
           c: "recol",
           e: "extras",
+          court: "RU·KR·CN",
           nom: "RU · KR · CN",
-          d: "Chine, Corée, Russie, Yandex : V2EX, Xiaohongshu, velog, Brunch, Kakao, Habr, Telegram, VK. Chaque source a ses conditions d'accès, décrites dans la note.",
+          d: "Quatre familles de sources qui demandent chacune un accès particulier : Chine (V2EX, Xiaohongshu, presse zh-CN), Corée (velog, Brunch, Kakao), Russie (Habr, Telegram, VK) et Yandex. La note dit, pour chaque source, ce qu'il faut (clé, session, outil) et ce qui casse. Livré en l'état.",
           p: "skill/extras/sources-avancees.md",
         },
         {
           id: "doctor",
-          court: "doctor",
           c: "recol",
           e: "depot",
+          court: "doctor",
           nom: "doctor.sh",
-          d: "Avant toute récolte : un tableau SOURCE / ÉTAT / DÉTAIL / RÉPARATION. Lecture seule, zéro requête réseau, une commande de réparation par panne.",
+          d: "Ne récolte rien : il vérifie. Lecture seule, zéro requête réseau, il rend un tableau SOURCE / ÉTAT / DÉTAIL / RÉPARATION avec une commande exacte par panne. À lancer avant chaque récolte : récolter sur une source KO ne donne rien et fait perdre du temps.",
           p: "skill/doctor.sh",
         },
 
         {
           id: "kb",
-          court: "KB",
           c: "base",
           e: "depot",
+          court: "KB",
           nom: "~/veille-kb",
           large: true,
-          d: "La base : un dossier par sujet, des bruts horodatés, des notes distillées, une synthèse qui se réécrit. Dépôt git local, pour que rien ne se perde et que tout se diff.",
+          dx: -3,
+          d: "Le dossier qui contient tout. Un sous-dossier par sujet, avec les bruts horodatés, les notes distillées, un _index.md des sources déjà ingérées, et une SYNTHESIS.md réécrite à chaque run. C'est un dépôt git : chaque passe est un commit, tu peux revenir en arrière et voir ce qui a changé. Rien n'en sort sans que tu le décides.",
           p: "$VEILLE_KB (défaut ~/veille-kb)",
+        },
+        {
+          id: "hook",
+          c: "base",
+          e: "perso",
+          court: "hook",
+          nom: "pre-commit",
+          dx: 7.5,
+          d: "Ce n'est pas un déclencheur de la veille, c'est un garde-fou posé sur la base. Un hook git s'exécute quand toi tu commites dans ~/veille-kb : celui-ci refuse le commit si une note n'a pas son front-matter complet (titre, URL, source, date) ou si une ligne ajoutée contient un tiret cadratin, une typographie que l'auteur bannit partout. Il ne fait pas partie du dépôt, et il ne déclenche aucune récolte.",
         },
 
         {
           id: "cherche",
-          court: "réponse",
           c: "sort",
           e: "depot",
+          court: "réponse",
           nom: "Réponse",
-          d: "Une réponse qui ne vient que de la base, notes citées. Le skill dit franchement quand la base ne contient pas la réponse.",
+          d: "Le mode lecture du skill. Il ne récolte rien, il répond : tu poses une question, il cherche dans les notes du sujet, et il répond en citant les fichiers et les URLs. S'il ne trouve pas dans la base, il le dit, il ne va pas chercher sur le web pour combler le trou.",
+          p: "skill/SKILL.md",
         },
         {
           id: "rapport",
-          court: "rapport",
           c: "sort",
           e: "depot",
+          court: "rapport",
           nom: "Rapport",
-          d: "Le compte rendu du mode lint : ce qui se contredit, ce qui a vieilli, ce qui a perdu ses liens. Daté, rangé dans _lint-reports/.",
+          d: "Le compte rendu du mode lint : ce qui se contredit, ce qui a vieilli, ce qui a perdu ses liens. Daté, rangé dans _lint-reports/. Le skill ne corrige pas tout seul, c'est toi qui tranches.",
         },
         {
           id: "feed",
-          court: "feed",
           c: "sort",
           e: "perso",
+          court: "feed",
           nom: "Feed du jour",
           d: "Le feed quotidien tiré de la base. Personnel.",
         },
         {
           id: "mail",
-          court: "mail",
           c: "sort",
           e: "perso",
+          court: "mail",
           nom: "Mail",
-          d: "L'envoi par mail des résumés au-delà d'un seuil. Personnel.",
+          d: "L'envoi par mail des résumés au-delà d'un seuil de volume. Personnel.",
         },
         {
           id: "alerte",
-          court: "alertes",
           c: "sort",
           e: "perso",
+          court: "alertes",
           nom: "Alertes macOS",
           d: "Les notifications de panne : récolte sans succès depuis 48 h, lint sans rapport, sources KO. Personnel.",
         },
       ];
 
+      // Chaque lien se lit comme une phrase : A fait ceci à B.
       const LIENS = [
-        ["toi", "skill"],
-        ["toi", "agents"],
-        ["toi", "doom"],
-        ["launchd", "loop"],
-        ["launchd", "lint"],
-        ["launchd", "doom"],
-        ["launchd", "rs"],
-        ["hook", "kb"],
-        ["webhook", "loop"],
-        ["launchd", "yt"],
-        ["daemon", "loop"],
-        ["skill", "yt"],
-        ["skill", "bili"],
-        ["skill", "x"],
-        ["skill", "web"],
-        ["skill", "intl"],
-        ["skill", "doctor"],
-        ["loop", "yt"],
-        ["loop", "bili"],
-        ["rs", "yt"],
-        ["agents", "web"],
-        ["agents", "yt"],
-        ["yt", "kb"],
-        ["bili", "kb"],
-        ["x", "kb"],
-        ["web", "kb"],
-        ["intl", "kb"],
-        ["lint", "kb"],
-        ["doom", "kb"],
-        ["kb", "cherche"],
-        ["kb", "feed"],
-        ["kb", "rapport"],
-        ["kb", "mail"],
-        ["loop", "alerte"],
-        ["lint", "alerte"],
+        ["toi", "skill", "lui donne le sujet, les sources cochées et les URLs collées"],
+        ["toi", "agents", "lui confie un sujet entier, à traiter en parallèle"],
+        ["toi", "doom", "lui demande le feed du jour"],
+        ["launchd", "loop", "réveille l'agent une fois par jour, sans toi"],
+        ["launchd", "lint", "déclenche le contrôle de santé hebdomadaire"],
+        ["launchd", "doom", "déclenche le feed du matin"],
+        ["launchd", "rs", "déclenche le rafraîchissement des corpus"],
+        ["launchd", "yt", "déclenche la récolte des nouvelles vidéos"],
+        ["webhook", "loop", "dépose une URL dans le staging, que l'agent trouve au réveil"],
+        ["hook", "kb", "refuse un commit si une note est incomplète"],
+        ["daemon", "loop", "ne fait rien : aucun process ne tourne entre deux runs"],
+        ["skill", "yt", "lui demande les dernières vidéos de chaque chaîne, puis les transcripts"],
+        ["skill", "bili", "lui demande les vidéos Bilibili et leurs sous-titres"],
+        ["skill", "x", "lui passe les URLs de tweets à convertir en texte"],
+        ["skill", "web", "lui donne la liste des flux à interroger"],
+        ["skill", "intl", "lui demande les sources chinoises, coréennes et russes"],
+        ["skill", "doctor", "lui demande l'état de chaque source avant de récolter"],
+        ["loop", "yt", "récolte les nouvelles vidéos sans passer par toi"],
+        ["loop", "bili", "récolte les vidéos Bilibili du jour"],
+        ["rs", "yt", "prend les nouvelles vidéos des créateurs suivis"],
+        ["agents", "web", "lui fait récolter les flux par un sous-agent dédié"],
+        ["agents", "yt", "lui fait récolter les vidéos par un sous-agent dédié"],
+        ["yt", "kb", "écrit les transcripts bruts dans _bruts/"],
+        ["bili", "kb", "écrit les transcripts bruts dans _bruts/"],
+        ["x", "kb", "écrit le texte des tweets dans _bruts/"],
+        ["web", "kb", "écrit les articles et les items de flux dans _bruts/"],
+        ["intl", "kb", "écrit les items traduits dans _bruts/"],
+        ["lint", "kb", "lit les notes et les synthèses, sans jamais les modifier"],
+        ["doom", "kb", "lit les notes pour composer le feed"],
+        ["kb", "cherche", "fournit les notes et les synthèses à citer"],
+        ["kb", "feed", "fournit la matière du feed du jour"],
+        ["kb", "mail", "fournit les résumés à envoyer"],
+        ["lint", "rapport", "écrit le compte rendu daté"],
+        ["rapport", "kb", "range le rapport dans _lint-reports/"],
+        ["loop", "alerte", "prévient en cas d'échec de la récolte"],
+        ["lint", "alerte", "prévient quand le contrôle de santé échoue"],
       ];
 
       const reduit = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1010,7 +1015,11 @@ d'après ma veille, qu'est-ce qui a changé sur les agents cet automne ?</code><
             opacity: perso ? 0.05 : extras ? 0.3 : 0.95,
           });
           const mesh = new THREE.Mesh(geo, mat);
-          mesh.position.set((i - (membres.length - 1) / 2) * pas, c.y, 0);
+          mesh.position.set(
+            n.dx !== undefined ? n.dx : (i - (membres.length - 1) / 2) * pas,
+            c.y,
+            0,
+          );
           const aretes = new THREE.LineSegments(
             new THREE.EdgesGeometry(geo),
             perso
@@ -1052,7 +1061,7 @@ d'après ma veille, qu'est-ce qui a changé sur les agents cet automne ?</code><
       });
 
       // Liens et flux
-      const liens = LIENS.map(([a, b]) => {
+      const liens = LIENS.map(([a, b, verbe]) => {
         const A = parId[a],
           B = parId[b];
         const decal = (B.mesh.position.x - A.mesh.position.x) * 0.15;
@@ -1095,6 +1104,7 @@ d'après ma veille, qu'est-ce qui a changé sur les agents cet automne ?</code><
         return {
           a,
           b,
+          verbe,
           pointille,
           courbe,
           ligne,
@@ -1127,24 +1137,23 @@ d'après ma veille, qu'est-ce qui a changé sur les agents cet automne ?</code><
           fiche.style.setProperty("--c", tok("--depot"));
           fiche.innerHTML = `<span class="nature">Mode d'emploi</span><h2>Clique un bloc</h2>
       <p>Chaque bloc a sa fiche : ce qu'il fait, où il vit, d'où il reçoit et vers quoi il envoie.</p>
-      <p class="vide">Plein : dans ce dépôt. Contour : extras livrés en l'état. Pointillé : le setup de l'auteur, absent de ce dépôt.</p>`;
+      <p class="vide">Plein : dans ce dépôt. Contour : extras livrés en l'état. Pointillé : le setup de l'auteur, absent de ce dépôt.</p>
+      <p class="vide">Chaque fiche dit ce que le bloc fait, où il vit, ce qui entre et ce qui sort, avec le verbe de l'action.</p>`;
           return;
         }
-        const entrants = liens
-          .filter((l) => l.b === n.id)
-          .map((l) => nomDe(l.a));
-        const sortants = liens
-          .filter((l) => l.a === n.id)
-          .map((l) => nomDe(l.b));
-        const liste = (t) =>
+        const entrees = liens.filter((l) => l.b === n.id);
+        const sorties = liens.filter((l) => l.a === n.id);
+        const liste = (t, autre) =>
           t.length
-            ? `<ul>${t.map((x) => `<li>${x}</li>`).join("")}</ul>`
+            ? `<ul>${t
+                .map((l) => `<li><b>${nomDe(autre(l))}</b> · ${l.verbe}</li>`)
+                .join("")}</ul>`
             : `<p class="vide">rien</p>`;
         fiche.classList.remove("repos");
         fiche.style.setProperty("--c", ETATS[n.e].c);
         fiche.innerHTML = `<span class="nature">${ETATS[n.e].nom}</span><h2>${n.nom}</h2>
     <p>${n.d.replace(/</g, "&lt;")}</p>${n.p ? `<p><code>${n.p}</code></p>` : ""}
-    <h3>Reçoit de</h3>${liste(entrants)}<h3>Envoie vers</h3>${liste(sortants)}`;
+    <h3>Ce qui entre</h3>${liste(entrees, (l) => l.a)}<h3>Ce qui sort</h3>${liste(sorties, (l) => l.b)}`;
       }
 
       let survol = null,
