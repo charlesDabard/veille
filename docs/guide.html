@@ -363,6 +363,14 @@
     </script>
   </head>
   <body>
+    <script>
+      // ?embed : la carte seule, sans l'en-tête qui la recouvre (utilisé par le deck de présentation).
+      if (new URLSearchParams(location.search).has("embed")) document.documentElement.classList.add("embed");
+    </script>
+    <style>
+      .embed #carte .tete { display: none; }
+      .embed #carte { height: 100vh; border-bottom: 0; }
+    </style>
     <div id="carte">
       <div id="scene" aria-hidden="true"></div>
       <div id="etiquettes" aria-hidden="true"></div>
