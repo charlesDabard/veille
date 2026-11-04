@@ -1,0 +1,7 @@
+# Chaînes YouTube suivies par la veille : une par ligne, « langue<TAB>URL de la page vidéos ».
+# Les lignes qui commencent par # sont ignorées. Remplacez ces exemples par vos propres chaînes.
+en	https://www.youtube.com/@Fireship/videos
+en	https://www.youtube.com/@YannicKilcher/videos
+en	https://www.youtube.com/@aiexplained-official/videos
+en	https://www.youtube.com/@matthew_berman/videos
+fr	https://www.youtube.com/@MachineLearnia/videos

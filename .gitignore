@@ -1,4 +1,5 @@
 ytkb/target/
 screenshots/
+.opencode/
 .DS_Store
 *.log

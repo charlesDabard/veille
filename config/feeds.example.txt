@@ -1,0 +1,4 @@
+# Flux RSS ou Atom suivis par la veille : une URL par ligne, # pour commenter.
+https://simonwillison.net/atom/everything/
+https://www.journalduhacker.net/rss
+https://news.humancoders.com/items/feed.rss
