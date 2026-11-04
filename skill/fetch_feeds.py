@@ -57,6 +57,8 @@ def parse_feed(data, feed_url):
     de DTD) : scan du document ENTIER, pas seulement du prologue, car du padding
     peut repousser la DTD au-delà des premiers Ko.
     """
+    if b"\x00" in data[:4]:
+        raise ValueError("flux UTF-16/UTF-32 refusé (la garde DTD ne lit que l'UTF-8)")
     if re.search(rb"<!(DOCTYPE|ENTITY)", data, re.IGNORECASE):
         raise ValueError("DTD/ENTITY détecté (XML suspect)")
     root = ET.fromstring(data)
@@ -128,7 +130,7 @@ def main():
     clean = lambda s: re.sub(r"[\t\r\n]+", " ", s)
     for dt, source, title, url, summary in kept:
         print("\t".join([dt.strftime("%Y-%m-%d"), clean(source), clean(title),
-                         url, clean(summary)]))
+                         clean(url), clean(summary)]))
 
     print(f"fetch_feeds: {len(urls)} flux, {len(all_items)} items bruts, "
           f"{len(kept)} gardés (fenêtre {args.days} j"

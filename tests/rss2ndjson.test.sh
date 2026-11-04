@@ -14,4 +14,10 @@ for cas in vide tronque; do
 	verifie "flux $cas : pas de trace Python" "$(printf '%s' "$out" | grep -q Traceback && echo 1 || echo 0)"
 	verifie "flux $cas : message rss2ndjson lisible" "$(printf '%s' "$out" | grep -q '^rss2ndjson:' && echo 0 || echo 1)"
 done
+# Garde DTD : une DTD repoussée après 4 Ko de commentaire, ou cachée dans un document UTF-16, doit être refusée comme une DTD en tête.
+pad=$(python3 -c 'print("<!--" + "x"*5000 + "-->")')
+out=$(printf '%s<!DOCTYPE r [<!ENTITY a "x">]><rss version="2.0"><channel><title>&a;</title><item><title>t</title><link>https://example.org/p</link></item></channel></rss>' "$pad" | python3 "$R/skill/rss2ndjson.py" 2>&1); rc=$?
+verifie "DTD après 5 Ko de padding : refusée" "$([ $rc != 0 ] && printf '%s' "$out" | grep -q 'DTD' && echo 0 || echo 1)"
+out=$(python3 -c 'import sys; sys.stdout.buffer.write("<?xml version=\"1.0\" encoding=\"UTF-16\"?><!DOCTYPE r [<!ENTITY a \"x\">]><rss version=\"2.0\"><channel><title>&a;</title><item><title>t</title><link>https://example.org/u</link></item></channel></rss>".encode("utf-16"))' | python3 "$R/skill/rss2ndjson.py" 2>&1); rc=$?
+verifie "DTD dans un flux UTF-16 : refusée" "$([ $rc != 0 ] && printf '%s' "$out" | grep -qi 'DTD\|UTF-16' && echo 0 || echo 1)"
 exit $ko

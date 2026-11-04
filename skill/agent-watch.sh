@@ -231,8 +231,12 @@ def examiner(chemin):
     return (chemin, identifiant(chemin), lecture, str(int(st.st_mtime)),
             str(st.st_size), str(evenements), str(casses), statut)
 
+# Un nom de fichier peut contenir tabulation ou saut de ligne : sans ce nettoyage
+# il forge des champs TSV, et un champ numérique forgé (ex. PATH[$(cmd)]) est
+# évalué par l'arithmétique bash, donc exécuté.
+propre = lambda c: re.sub(r'[\t\r\n]', '?', c)
 for arg in sys.argv[1:]:
-    print('\t'.join(examiner(arg)))
+    print('\t'.join(propre(c) for c in examiner(arg)))
 PY
 }
 
@@ -337,9 +341,11 @@ mode_fichier() {
   fi
   local ligne
   ligne=$(facts "$cible") || { echo "$PROG: lecture impossible : $cible" >&2; return 2; }
-  local IFS=$'\t'
-  # shellcheck disable=SC2086
-  set -- $ligne
+  # read et non « set -- $ligne » : un nom de fichier qui contient * serait étendu
+  # par le glob et décalerait tous les champs.
+  local c id lec mt tl ev ca no
+  IFS=$'\t' read -r c id lec mt tl ev ca no <<< "$ligne"
+  set -- "$c" "$id" "$lec" "$mt" "$tl" "$ev" "$ca" "${no:-}"
   if [ "$3" = "nontranscript" ]; then
     echo "$PROG: ce fichier n'est pas un transcript d'agent JSONL : $cible" >&2
     echo "       (le dossier tasks/ contient aussi les sorties brutes des taches bash)" >&2

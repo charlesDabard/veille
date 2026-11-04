@@ -42,7 +42,12 @@ def emit(title, url, published, source, summary):
 
 data = sys.stdin.buffer.read()
 # Garde anti billion-laughs/XXE sans dépendance : un flux légitime n'a jamais de DTD.
-if re.search(rb"<!(DOCTYPE|ENTITY)", data[:4096], re.IGNORECASE):
+# Le document ENTIER est scanné (un commentaire de padding peut repousser la DTD
+# au-delà des premiers Ko), et l'UTF-16/32 est refusé : la regex lit des octets,
+# elle ne verrait pas une DTD encodée sur deux ou quatre octets par caractère.
+if b"\x00" in data[:4]:
+    sys.exit("rss2ndjson: flux UTF-16/UTF-32 refusé · la garde DTD ne lit que l'UTF-8 et ses cousins ASCII")
+if re.search(rb"<!(DOCTYPE|ENTITY)", data, re.IGNORECASE):
     sys.exit("rss2ndjson: DTD/ENTITY détecté dans le flux · refusé (XML suspect)")
 if not data.strip():
     sys.exit("rss2ndjson: flux vide · la source n'a rien rendu (URL morte, blocage, ou curl sans -L)")

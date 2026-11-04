@@ -83,11 +83,13 @@ else
 fi
 
 # --- 3. clé REST Kakao ---
+# La clé passe par un fichier d'en-tête (-H @fichier), jamais en argument de curl :
+# les arguments d'un process sont lisibles par tout utilisateur via ps.
 if [ ! -s "$CFG/kakao_rest_key" ]; then
 	row "Kakao dapi" "KO" "clé absente" "créer une APP sur developers.kakao.com, clé sous config/platform-key, puis: echo '<cle>' > $CFG/kakao_rest_key && chmod 600 $CFG/kakao_rest_key"
 elif [ "$LIVE" = "1" ]; then
 	CODE=$(curl -sS -o /dev/null -w '%{http_code}' -G 'https://dapi.kakao.com/v2/search/web' \
-		-H "Authorization: KakaoAK $(cat "$CFG/kakao_rest_key")" \
+		-H @<(printf 'Authorization: KakaoAK %s\n' "$(cat "$CFG/kakao_rest_key")") \
 		--data-urlencode 'query=ping' --max-time 15 2>/dev/null)
 	[ "$CODE" = "200" ] &&
 		row "Kakao dapi" "OK" "HTTP 200 (1 requête)" "-" ||
