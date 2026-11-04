@@ -101,6 +101,8 @@ STAMP="$(/usr/bin/mktemp /tmp/veille-loop-stamp.XXXXXX)"
 touch "$STAMP"
 BEFORE_STATUS="$(/usr/bin/mktemp /tmp/veille-loop-before.XXXXXX)"
 /usr/bin/git -C "$KB" status --porcelain=v1 | /usr/bin/sort >"$BEFORE_STATUS"
+# L'agent lit des transcripts non fiables : ses droits (bash en liste blanche, disque limité à la KB)
+# sont dans sa définition, voir extras/README.md, garde-fou « Contenu non fiable ».
 PROMPT="Run de veille du $(date '+%F'). La récolte est déjà faite. Applique le runbook et réponds en une ligne."
 # Un échec (timeout ou blocage au démarrage) est retenté UNE fois après 60 s : mesuré le
 # 2026-09-28, les blocages se lèvent souvent d'eux-mêmes, et un cron qui abandonne au premier

@@ -26,7 +26,7 @@ verifie() { # $1 nom, $2 code (0 = vrai)
 FH="$TD/home"
 KB="$FH/veille-kb"
 B="$TD/bin"
-mkdir -p "$FH/.config/veille" "$B"
+mkdir -p "$FH/.config/veille" "$B" "$TD/tmp"
 printf 'en\thttps://www.youtube.com/@a/videos\n' >"$FH/.config/veille/channels.txt"
 printf '# test\n111\tUP-un\n222\tUP-deux\n' >"$TD/bilibili.txt"
 
@@ -68,7 +68,7 @@ kb_neuve() { # BVvu est déjà ingérée dans un topic
 	rm -f "$TD/deja-111"
 }
 run() { # $1 MAX_TOTAL, $2 BILI_MAX
-	env HOME="$FH" PATH="$B:$PATH" TD="$TD" VEILLE_BILI_CFG="$TD/bilibili.txt" VEILLE_BILI_MAX="$2" \
+	env HOME="$FH" PATH="$B:$PATH" TD="$TD" TMPDIR="$TD/tmp" VEILLE_BILI_CFG="$TD/bilibili.txt" VEILLE_BILI_MAX="$2" \
 		VEILLE_BILI_PAUSE=0 VEILLE_WHISPER_MODEL=/dev/null bash "$HARVEST" 2 "$1" 2>"$TD/err"
 }
 W="$KB/_loop-staging/worklist.json"
@@ -151,6 +151,14 @@ for bv in BVun1 BVdeux1 BVdeux2; do echo "{\"id\":\"$bv\",\"text\":\"x\"}" >"$KB
 out="$(run 15 3)"
 printf '%s' "$out" | grep -q RIEN_DE_NEUF
 verifie "rien de neuf nulle part : RIEN_DE_NEUF" $?
+
+# Fichiers de travail : dans un dossier privé sous TMPDIR, nettoyé à la sortie, jamais à un nom fixe
+# de /tmp (un autre compte pourrait y poser un lien à l'avance et détourner l'écriture).
+touch "$TD/repere"
+run 15 3 >/dev/null
+fixes="$(find /tmp/ -maxdepth 1 -name 'veille-loop-*' ! -name 'veille-loop-harvest-test.*' -newer "$TD/repere" 2>/dev/null)"
+[ -z "$fixes" ] && [ -z "$(ls -A "$TD/tmp")" ]
+verifie "temporaires : aucun nom fixe dans /tmp, dossier privé nettoyé${fixes:+ ($fixes)}" $?
 
 echo "---"
 echo "$PASS ok, $FAIL échec(s)"

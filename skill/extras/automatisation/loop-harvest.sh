@@ -15,10 +15,14 @@ MAX_TOTAL="${2:-15}"
 KB="${VEILLE_KB:-$HOME/veille-kb}"
 CFG="$HOME/.config/veille/channels.txt"
 STAGE="$KB/_loop-staging"
-NEW_TSV="/tmp/veille-loop-new.tsv"
-CAP_TSV="/tmp/veille-loop-capped.tsv"
-URLS="/tmp/veille-loop-urls.txt"
-BATCH="/tmp/veille-loop-batch.ndjson"
+# Fichiers de travail dans un dossier privé tiré au hasard, jamais à un nom fixe de /tmp : un autre
+# compte de la machine pourrait y poser un lien à l'avance et faire écrire la récolte ailleurs.
+TRAVAIL="$(mktemp -d "${TMPDIR:-/tmp}/veille-loop.XXXXXX")" || exit 2
+trap 'rm -rf "$TRAVAIL"' EXIT
+NEW_TSV="$TRAVAIL/new.tsv"
+CAP_TSV="$TRAVAIL/capped.tsv"
+URLS="$TRAVAIL/urls.txt"
+BATCH="$TRAVAIL/batch.ndjson"
 
 [ -f "$CFG" ] || {
 	echo "channels.txt absent : $CFG" >&2
@@ -39,7 +43,7 @@ done | sort -u)"
 # restée d'un run interrompu est reprise.
 QUEUE="$HOME/.config/veille/inbox-queue.txt"
 EN_COURS="$QUEUE.en-cours"
-INBOX_TSV="/tmp/veille-loop-inbox.tsv"
+INBOX_TSV="$TRAVAIL/inbox.tsv"
 [ -f "$QUEUE" ] && { cat "$QUEUE" >>"$EN_COURS" && rm -f "$QUEUE"; }
 : >"$INBOX_TSV"
 [ -f "$EN_COURS" ] && sed -nE 's#^https://youtu\.be/([A-Za-z0-9_-]{11})$#\1#p' "$EN_COURS" | while IFS= read -r id; do
@@ -54,8 +58,7 @@ done >"$INBOX_TSV"
 BILI_CFG="${VEILLE_BILI_CFG:-$HOME/.config/veille/bilibili.txt}"
 BILI_MAX="${VEILLE_BILI_MAX:-3}"
 BILI_PAUSE="${VEILLE_BILI_PAUSE:-3}"
-BILI_TSV="$(mktemp /tmp/veille-loop-bili.XXXXXX)"
-trap 'rm -f "$BILI_TSV"' EXIT
+BILI_TSV="$TRAVAIL/bili.tsv"
 bili_liste() { # $1 uid -> bvids récents, un par ligne
 	local r
 	r="$(bili user-videos "$1" -n "$LATEST" --json 2>/dev/null)"
@@ -111,8 +114,7 @@ echo "nouvelles vidéos retenues : $NB dont $NB_BILI Bilibili (plafond $MAX_TOTA
 # d'abord, hors plafond des nouveautés, au plus REPRISE_MAX par run pour tenir le timeout de
 # l'agent. Sans texte ou déjà ingéré ailleurs : écarté (la récolte normale s'en charge).
 REPRISE_MAX="${VEILLE_REPRISE_MAX:-10}"
-REPRISE_TSV="$(mktemp /tmp/veille-loop-reprise.XXXXXX)"
-trap 'rm -f "$BILI_TSV" "$REPRISE_TSV" "$REPRISE_TSV.pris"' EXIT
+REPRISE_TSV="$TRAVAIL/reprise.tsv"
 cut -f1 "$CAP_TSV" "$BILI_TSV" >"$REPRISE_TSV.pris"
 ls -tr "$STAGE/transcripts" 2>/dev/null | grep '\.json$' | while IFS= read -r f; do
 	id="${f%.json}"
@@ -149,7 +151,7 @@ fi
 # l'agent signale la fiabilité moindre en tête de note.
 if [ "$NB_YT" -gt 0 ]; then
 	cut -f3 "$CAP_TSV" >"$URLS"
-	ytkb -f "$URLS" --lang de,fr,en,es --transcribe --whisper-model large-v3-turbo >"$BATCH" 2>/tmp/veille-loop.err
+	ytkb -f "$URLS" --lang de,fr,en,es --transcribe --whisper-model large-v3-turbo >"$BATCH" 2>"$HOME/.config/veille/loop-ytkb.err"
 	jq -c 'select(.error==null)' "$BATCH" | while IFS= read -r rec; do
 		id=$(jq -r .id <<<"$rec")
 		printf '%s\n' "$rec" | jq . >"$STAGE/transcripts/$id.json"
