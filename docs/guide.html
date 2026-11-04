@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>veille · la carte et le guide</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --papier: #12191c;
+        --carte: #1a2327;
+        --encre: #e6ece8;
+        --doux: #9aaaa6;
+        --trait: #34444a;
+        --depot: #7c93ff;
+        --extras: #e0a548;
+        --perso: #6f7b77;
+        --mono: ui-monospace, "SF Mono", Menlo, monospace;
+        --texte: -apple-system, system-ui, "Helvetica Neue", sans-serif;
+        --display:
+          "Avenir Next Condensed", "Avenir Next", "Arial Narrow", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--papier);
+        color: var(--encre);
+        font: 15px/1.6 var(--texte);
+        overflow-x: hidden;
+      }
+      #carte {
+        position: relative;
+        height: 90vh;
+        min-height: 520px;
+        overflow: hidden;
+        border-bottom: 1px solid var(--trait);
+      }
+      #scene,
+      #etiquettes {
+        position: absolute;
+        inset: 0;
+      }
+      #etiquettes {
+        pointer-events: none;
+      }
+      .tete {
+        position: absolute;
+        top: 20px;
+        left: 24px;
+        max-width: 430px;
+        pointer-events: none;
+      }
+      .tete h1 {
+        margin: 0;
+        font: 700 clamp(26px, 4vw, 40px)/1 var(--display);
+        text-transform: uppercase;
+      }
+      .tete p {
+        margin: 6px 0 0;
+        color: var(--doux);
+        font-size: 13px;
+      }
+      .legende {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 14px;
+        margin: 10px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 12px;
+        color: var(--doux);
+      }
+      .legende li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .legende i {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+      }
+      .legende i.plein {
+        background: var(--depot);
+      }
+      .legende i.contour {
+        background: color-mix(in srgb, var(--extras) 25%, transparent);
+        border: 1.5px solid var(--extras);
+      }
+      .legende i.fil {
+        background: none;
+        border: 1.5px dashed var(--perso);
+      }
+      .commandes {
+        position: absolute;
+        left: 24px;
+        bottom: 20px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      button {
+        font: 600 12px var(--mono);
+        color: var(--encre);
+        background: var(--carte);
+        border: 1px solid var(--trait);
+        border-radius: 6px;
+        padding: 10px 12px;
+        min-height: 44px;
+        cursor: pointer;
+      }
+      button[aria-pressed="true"] {
+        border-color: var(--depot);
+        color: var(--depot);
+      }
+      button:focus-visible {
+        outline: 2px solid var(--depot);
+        outline-offset: 2px;
+      }
+      #fiche {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 320px;
+        max-height: calc(100% - 40px);
+        overflow: auto;
+        background: color-mix(in srgb, var(--carte) 92%, transparent);
+        border: 1px solid var(--trait);
+        border-left: 4px solid var(--c, var(--trait));
+        border-radius: 10px;
+        padding: 16px 18px;
+        backdrop-filter: blur(6px);
+      }
+      #fiche h2 {
+        margin: 0 0 2px;
+        font: 700 22px/1.1 var(--display);
+        text-transform: uppercase;
+      }
+      #fiche .nature {
+        font: 600 11px var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--c);
+      }
+      #fiche p {
+        margin: 10px 0 0;
+      }
+      #fiche code {
+        font: 12px var(--mono);
+        overflow-wrap: anywhere;
+        color: var(--doux);
+      }
+      #fiche h3 {
+        margin: 14px 0 4px;
+        font: 600 11px var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--doux);
+      }
+      #fiche ul {
+        margin: 0;
+        padding-left: 16px;
+      }
+      #fiche .vide {
+        color: var(--doux);
+      }
+      .nom {
+        font: 600 12px var(--texte);
+        color: var(--encre);
+        background: color-mix(in srgb, var(--papier) 70%, transparent);
+        padding: 2px 6px;
+        border-radius: 4px;
+        white-space: nowrap;
+        transition: opacity 0.2s;
+      }
+      .nom.perso {
+        color: var(--perso);
+        font-style: italic;
+      }
+      .couche {
+        font: 700 15px var(--display);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--doux);
+        white-space: nowrap;
+      }
+      .couche b {
+        color: var(--encre);
+      }
+      #erreur {
+        position: absolute;
+        inset: 0;
+        display: none;
+        place-items: center;
+        text-align: center;
+        padding: 24px;
+        color: var(--doux);
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 8px 24px 112px;
+      }
+      main section {
+        padding-top: 34px;
+        border-top: 1px solid var(--trait);
+        margin-top: 44px;
+      }
+      main section:first-child {
+        border-top: 0;
+        margin-top: 0;
+      }
+      h2 {
+        margin: 0 0 14px;
+        font: 700 clamp(24px, 3.4vw, 32px)/1.05 var(--display);
+        text-transform: uppercase;
+      }
+      h3 {
+        margin: 26px 0 6px;
+        font: 600 15px/1.3 var(--texte);
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      a {
+        color: var(--depot);
+        text-underline-offset: 3px;
+      }
+      code {
+        font: 13px var(--mono);
+      }
+      p code,
+      li code,
+      td code {
+        background: var(--carte);
+        border: 1px solid var(--trait);
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+      pre {
+        margin: 0 0 14px;
+        padding: 14px 16px;
+        background: var(--carte);
+        border: 1px solid var(--trait);
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+      pre code {
+        border: 0;
+        padding: 0;
+        background: none;
+      }
+      ul,
+      ol {
+        margin: 0 0 14px;
+        padding-left: 22px;
+      }
+      li {
+        margin-bottom: 6px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 16px;
+        font-size: 14px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--trait);
+        vertical-align: top;
+      }
+      th {
+        font: 600 11px var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--doux);
+      }
+      .note {
+        border-left: 3px solid var(--extras);
+        padding: 2px 0 2px 14px;
+        color: var(--doux);
+      }
+      footer {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 24px 64px;
+        color: var(--doux);
+        font-size: 13px;
+      }
+      @media (max-width: 760px) {
+        #carte {
+          height: 84vh;
+          min-height: 460px;
+        }
+        #fiche.repos,
+        .couche {
+          display: none;
+        }
+        #fiche {
+          top: auto;
+          bottom: 72px;
+          left: 12px;
+          right: 12px;
+          width: auto;
+          max-height: 40%;
+        }
+        .tete {
+          left: 14px;
+          top: 12px;
+          right: 14px;
+        }
+        .tete p {
+          display: none;
+        }
+        .commandes {
+          left: 10px;
+          bottom: 10px;
+          right: 10px;
+          gap: 6px;
+        }
+        button {
+          padding: 9px 10px;
+          font-size: 11px;
+        }
+        .nom {
+          font-size: 9.5px;
+          padding: 1px 4px;
+        }
+        main {
+          padding: 0 18px 80px;
+        }
+        table {
+          font-size: 13px;
+        }
+        th,
+        td {
+          padding: 7px 6px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        .nom {
+          transition: none;
+        }
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="carte">
+      <div id="scene" aria-hidden="true"></div>
+      <div id="etiquettes" aria-hidden="true"></div>
+
+      <header class="tete">
+        <h1>La veille, étage par étage</h1>
+        <p>
+          Le contenu descend : déclencheurs, cerveaux, récolteurs, base, puis ce
+          que tu lis. Glisse pour tourner, molette pour zoomer, clique un bloc
+          pour sa fiche. Les blocs en pointillé appartiennent au setup de
+          l'auteur, pas à ce dépôt.
+        </p>
+        <ul class="legende">
+          <li><i class="plein"></i>Dans ce dépôt</li>
+          <li><i class="contour"></i>Extras, en l'état</li>
+          <li><i class="fil"></i>Hors dépôt, chez l'auteur</li>
+        </ul>
+      </header>
+
+      <aside id="fiche" aria-live="polite"></aside>
+
+      <nav class="commandes" aria-label="Commandes de la vue">
+        <button id="b-seul" aria-pressed="false">Dépôt seul</button>
+        <button id="b-rot" aria-pressed="true">Rotation</button>
+        <button id="b-flux" aria-pressed="true">Flux</button>
+        <button id="b-face">Vue de face</button>
+        <button id="b-reset">Recentrer</button>
+      </nav>
+
+      <div id="erreur">
+        <p>
+          La scène 3D n'a pas pu démarrer (WebGL absent ou three.js
+          injoignable).<br />Le guide écrit reste lisible en dessous : il ne
+          dépend d'aucun script.
+        </p>
+      </div>
+    </div>
+
+    <main>
+      <section id="installer">
+        <h2>Installer</h2>
+        <p>
+          Trois commandes, aucun compte, aucune clé. Il faut <code>git</code>,
+          <code>curl</code>, <code>jq</code>, <code>python3</code> et
+          <code>yt-dlp</code>.
+        </p>
+        <pre><code>git clone https://github.com/charlesDabard/veille.git
+cd veille
+bash install.sh</code></pre>
+        <p>
+          <code>install.sh</code> fait quatre choses, dans cet ordre : il lie
+          <code>~/.claude/skills/veille</code> vers le <code>skill/</code> du
+          dépôt, il crée la base de connaissances dans <code>~/veille-kb</code>,
+          il copie les listes de sources d'exemple dans
+          <code>~/.config/veille/</code>, et il compile <code>ytkb</code>.
+        </p>
+        <p>
+          Relance-le autant que tu veux : un second passage ne modifie rien. Si
+          un lien <code>veille</code> existe déjà chez toi, il refuse de
+          l'écraser et te dit exactement quoi faire. Et si Rust manque, il lie
+          quand même la skill, installe le reste, et te donne la commande qui
+          manque : seule la source YouTube est indisponible.
+        </p>
+        <p>Ensuite, avant la première récolte :</p>
+        <pre><code>bash skill/doctor.sh</code></pre>
+        <p>
+          Un tableau <code>SOURCE / ÉTAT / DÉTAIL / RÉPARATION</code>, en
+          lecture seule, sans une seule requête réseau. Toute ligne
+          <code>KO</code> porte la commande exacte qui la répare.
+          <code>SKIP</code> veut dire « source optionnelle désactivée » : la
+          veille tourne sans, et le rapport le dit.
+        </p>
+      </section>
+
+      <section id="premier-run">
+        <h2>Premier run</h2>
+        <p>Dans ton agent, depuis le dossier de ton choix :</p>
+        <pre><code>/veille serveurs MCP</code></pre>
+        <p>
+          Le skill commence par une question, jamais par une récolte : YouTube
+          seul, tout, web seul, ou choix fin source par source. Il dérive
+          ensuite deux ou trois requêtes du sujet, il te montre ce qu'il a
+          trouvé avec les titres, et il attend ta sélection. Rien n'est
+          téléchargé sans ton accord.
+        </p>
+        <p>
+          Les questions passent par l'outil de question de l'agent, pas par du
+          texte libre : dans Claude Code c'est AskUserQuestion, dans OpenCode
+          c'est l'outil <code>question</code>. C'est ce qui rend la sélection
+          rapide au clavier.
+        </p>
+        <p class="note">
+          Un terme polysémique se désambiguïse avant la récolte complète. Le
+          skill sonde d'abord cinq résultats et lit les titres : sept faux
+          positifs distillés pour rien coûtent bien plus qu'une requête de
+          sonde.
+        </p>
+      </section>
+
+      <section id="base">
+        <h2>Ce que produit la base</h2>
+        <p>
+          Tout atterrit dans <code>$VEILLE_KB</code> si la variable est posée,
+          sinon <code>~/veille-kb</code>. Un dossier par sujet :
+        </p>
+        <pre><code>~/veille-kb/
+├── _bruts/          transcripts et articles tels quels, horodatés
+├── notes/           une note par source, en français, avec sa pertinence
+├── SYNTHESIS.md     la synthèse du sujet, réécrite à chaque run
+└── _index.md        les sources déjà ingérées, l'anti-doublon</code></pre>
+        <p>
+          Chaque note commence par un front-matter qui porte le titre, l'URL, la
+          source et la date de distillation, puis une section
+          <code>## Pertinence</code> notée sur 5. C'est cette note qui permet de
+          trier plus tard, quand la base aura cent notes et que tu ne te
+          souviendras plus de pourquoi tu avais gardé celle-là.
+        </p>
+        <p>
+          La synthèse n'est pas un journal : elle est réécrite, pas complétée.
+          Une information périmée sort, une contradiction se tranche, une
+          section qui n'a plus rien à dire disparaît. C'est le travail que
+          personne ne fait à la main.
+        </p>
+        <h3>L'incrémental</h3>
+        <p>
+          Relancer <code>/veille serveurs MCP</code> la semaine suivante ne
+          retélécharge rien. <code>_index.md</code> liste les identifiants déjà
+          ingérés, et seuls les nouveaux passent. Sans ça, la base grossit en
+          doublons et la synthèse devient illisible.
+        </p>
+      </section>
+
+      <section id="chercher">
+        <h2>Chercher</h2>
+        <p>Deux façons de poser la question :</p>
+        <pre><code>cherche dans ma veille : les serveurs MCP gèrent-ils OAuth ?
+d'après ma veille, qu'est-ce qui a changé sur les agents cet automne ?</code></pre>
+        <p>
+          La réponse vient uniquement de la base, avec les notes citées. Si la
+          base ne contient pas la réponse, le skill le dit au lieu d'inventer :
+          c'est la différence entre une base de connaissance et un moteur de
+          recherche qui te noie.
+        </p>
+      </section>
+
+      <section id="linter">
+        <h2>Linter</h2>
+        <pre><code>lint ma veille</code></pre>
+        <p>
+          Un contrôle de santé en lecture seule, par sujet : contradictions
+          entre deux notes, affirmations devenues fausses, notes orphelines
+          qu'aucune synthèse ne cite, liens morts. Le rapport sort dans
+          <code>_lint-reports/</code>, daté.
+        </p>
+        <p>
+          C'est le mode qui garde la base honnête. Une base qui ne se relit
+          jamais accumule des vérités de l'année dernière avec l'air d'être
+          d'aujourd'hui.
+        </p>
+      </section>
+
+      <section id="ajouter-une-source">
+        <h2>Ajouter une source</h2>
+        <p>
+          Trois niveaux, du plus simple au plus coûteux. Commence toujours par
+          le premier.
+        </p>
+        <h3>1. Une liste, si la source est un flux</h3>
+        <p>
+          <code>~/.config/veille/feeds.txt</code> pour du RSS ou de l'Atom,
+          <code>~/.config/veille/channels.txt</code> pour des chaînes YouTube
+          (langue, tabulation, URL de la page vidéos). Une ligne par source,
+          <code>#</code> pour commenter. Aucun code à écrire.
+        </p>
+        <h3>2. Un script de récolte, si la source a une API</h3>
+        <p>
+          Regarde <code>skill/fetch_feeds.py</code> : c'est le plus court des
+          récolteurs, et il suit la même forme que les autres. Il lit la liste,
+          interroge la source, écrit du NDJSON sur la sortie standard, et laisse
+          la distillation au skill. Un récolteur ne juge rien, il rapporte.
+        </p>
+        <h3>3. Une note de méthode, si la source demande une session</h3>
+        <p>
+          Certaines sources ne s'ouvrent qu'avec un compte, un cookie ou un
+          outil dédié. C'est le cas de toutes les sources de
+          <code>skill/extras/sources-avancees.md</code> : le fichier décrit
+          l'accès, les conditions et les pièges, il ne promet pas que ça
+          marchera chez toi.
+        </p>
+      </section>
+
+      <section id="ta-skill">
+        <h2>Faire ta propre skill</h2>
+        <p>
+          Le skill n'est pas magique : c'est un fichier markdown avec un
+          front-matter, lu par ton agent. Le champ <code>description</code> dit
+          quand le déclencher, le corps dit quoi faire. Le reste, ce sont des
+          scripts que le corps appelle.
+        </p>
+        <p>
+          Pour changer le mot magique, une seule ligne à toucher : le
+          <code>description</code> de <code>skill/SKILL.md</code>. Remplace
+          <code>/veille</code> par ce que tu veux, par exemple
+          <code>MON KEVIN</code>, et le skill répondra à
+          <code>MON KEVIN serveurs MCP</code>. Aucun chemin à modifier : la base
+          est <code>~/veille-kb</code> ou <code>$VEILLE_KB</code>.
+        </p>
+        <p>
+          Pour un autre domaine, la méthode qui marche est de garder les
+          mécanismes et de changer la politique : où ranger, quoi distiller,
+          comment fusionner. Les récolteurs, eux, se réutilisent tels quels.
+        </p>
+      </section>
+
+      <section id="niveaux">
+        <h2>Ce qui est garanti, ce qui ne l'est pas</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Partie</th>
+              <th>État</th>
+              <th>Ce que ça veut dire</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>skill/SKILL.md</code> et les scripts du cœur</td>
+              <td>Testé</td>
+              <td>
+                YouTube, Google News, Hacker News, GitHub, Reddit, flux RSS, X
+                par URLs collées, recherche web. C'est là que vivent les 80 % du
+                travail, et c'est maintenu.
+              </td>
+            </tr>
+            <tr>
+              <td><code>skill/doctor.sh</code></td>
+              <td>Testé</td>
+              <td>
+                Lecture seule, aucune requête réseau, une commande de réparation
+                par panne.
+              </td>
+            </tr>
+            <tr>
+              <td><code>skill/extras/</code></td>
+              <td>En l'état</td>
+              <td>
+                Chine, Corée, Russie, Yandex, et l'automatisation par
+                <code>launchd</code>. Tourne sur la machine de l'auteur, sous
+                macOS, avec des clés et des sessions de navigateur. Non garanti
+                ailleurs.
+              </td>
+            </tr>
+            <tr>
+              <td><code>~/veille-kb</code></td>
+              <td>À toi</td>
+              <td>
+                Dépôt git local. Rien ne sort de ta machine, rien n'est poussé
+                sans que tu le décides.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          La règle est simple : ce qui est dans le cœur est promis, ce qui est
+          dans <code>extras/</code> est offert tel quel.
+          <code>skill/extras/README.md</code> dit, pour chaque pièce, ce qu'il
+          faut pour la faire tourner. Lis-le avant de l'activer.
+        </p>
+      </section>
+
+      <section id="licence">
+        <h2>Licence</h2>
+        <p>
+          MIT. Prends, modifie, republie. Le dépôt est
+          <a href="https://github.com/charlesDabard/veille"
+            >github.com/charlesDabard/veille</a
+          >.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Guide de la veille · la carte se lit aussi sans JavaScript, tout le
+        texte est en dessous.
+      </p>
+    </footer>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import {
+        CSS2DRenderer,
+        CSS2DObject,
+      } from "three/addons/renderers/CSS2DRenderer.js";
+
+      const css = getComputedStyle(document.documentElement);
+      const tok = (n) => css.getPropertyValue(n).trim();
+      const ETATS = {
+        depot: { nom: "Dans ce dépôt", c: tok("--depot") },
+        extras: { nom: "Extras, en l'état", c: tok("--extras") },
+        perso: { nom: "Hors dépôt, chez l'auteur", c: tok("--perso") },
+      };
+
+      const COUCHES = [
+        { id: "decl", nom: "1 · Déclencheurs", sous: "ce qui met en route" },
+        { id: "cerv", nom: "2 · Cerveaux", sous: "décident et distillent" },
+        { id: "recol", nom: "3 · Récolteurs", sous: "scripts, ne jugent rien" },
+        { id: "base", nom: "4 · Base", sous: "tout atterrit ici" },
+        { id: "sort", nom: "5 · Sorties", sous: "ce que tu lis" },
+      ];
+
+      const NOEUDS = [
+        {
+          id: "toi",
+          court: "Toi",
+          c: "decl",
+          e: "depot",
+          nom: "Toi",
+          d: "Dans ton agent, tu écris /veille <sujet>, « cherche dans ma veille … » ou « lint ma veille ». Le skill demande toujours quelles sources activer avant de récolter.",
+          p: "skill/SKILL.md",
+        },
+        {
+          id: "launchd",
+          court: "launchd",
+          c: "decl",
+          e: "extras",
+          nom: "launchd",
+          d: "L'ordonnanceur de macOS. Le modèle fourni lance une récolte par jour, sans process résident. Sans lui, tout se lance à la main.",
+          p: "skill/extras/automatisation/veille-loop.plist.example",
+        },
+        {
+          id: "hook",
+          court: "hook",
+          c: "decl",
+          e: "perso",
+          nom: "pre-commit",
+          d: "Un hook git posé sur la base : il refuse une note sans front-matter complet, ou une ligne ajoutée avec un tiret cadratin. Garde-fou d'écriture personnel, pas livré ici.",
+        },
+        {
+          id: "webhook",
+          court: "iPhone",
+          c: "decl",
+          e: "perso",
+          nom: "Raccourci",
+          d: "Un Raccourci qui ajoute une URL à un fichier iCloud, que launchd surveille : la vidéo envoyée depuis le téléphone passe en tête de la récolte du matin. Bricolage personnel.",
+        },
+        {
+          id: "daemon",
+          court: "Daemon",
+          c: "decl",
+          e: "perso",
+          nom: "Daemon",
+          d: "Aucun process résident, et c'est voulu : pour une récolte quotidienne, un déclencheur de fichier suffit.",
+        },
+
+        {
+          id: "skill",
+          court: "Skill",
+          c: "cerv",
+          e: "depot",
+          nom: "Skill veille",
+          d: "Le chef d'orchestre : choix des sources, sélection humaine des items, distillation, synthèse par sujet. Trois modes, récolter, chercher, linter.",
+          p: "skill/SKILL.md",
+        },
+        {
+          id: "loop",
+          court: "loop",
+          c: "cerv",
+          e: "extras",
+          nom: "veille-loop",
+          d: "Un agent autonome qui distille la récolte du matin sans toi, puis commite en local sans jamais pousser. Le modèle et les règles de permission sont à adapter à ton agent.",
+          p: "skill/extras/automatisation/loop-cron.sh",
+        },
+        {
+          id: "lint",
+          court: "lint",
+          c: "cerv",
+          e: "depot",
+          nom: "Mode lint",
+          d: "Un contrôle de santé par sujet, en lecture seule : contradictions, affirmations périmées, notes orphelines, liens morts. C'est un mode du skill, pas un script séparé.",
+          p: "skill/SKILL.md",
+        },
+        {
+          id: "doom",
+          court: "feed",
+          c: "cerv",
+          e: "perso",
+          nom: "Feed",
+          d: "Un feed tiré de la base, avec des analyses de fond et des brouillons de posts. Skill personnelle, pas dans ce dépôt.",
+        },
+        {
+          id: "rs",
+          court: "réseau",
+          c: "cerv",
+          e: "perso",
+          nom: "reseau-social",
+          d: "Le rafraîchissement des corpus de créateurs suivis, résumés puis envoyés par mail au-delà d'un seuil. Personnel, pas dans ce dépôt.",
+        },
+        {
+          id: "agents",
+          court: "agents",
+          c: "cerv",
+          e: "depot",
+          nom: "Sous-agents",
+          d: "Les sous-agents de ton agent : un par sujet pour un run complet, un pour un chantier sur la base. Le skill décrit comment les découper, tu écris les tiens.",
+          p: "skill/SKILL.md",
+        },
+
+        {
+          id: "yt",
+          court: "YouTube",
+          c: "recol",
+          e: "depot",
+          nom: "YouTube",
+          d: "ytkb (Rust) par-dessus yt-dlp : lister une chaîne, trier par date, prendre les transcripts, et gérer les cas où YouTube exige une session.",
+          p: "ytkb/",
+        },
+        {
+          id: "bili",
+          court: "bili",
+          c: "recol",
+          e: "extras",
+          nom: "Bilibili",
+          d: "yt-dlp y prend un 412 : il faut un outil dédié, puis whisper quand les sous-titres demandent un compte.",
+          p: "skill/extras/automatisation/loop-harvest.sh",
+        },
+        {
+          id: "x",
+          court: "X",
+          c: "recol",
+          e: "extras",
+          nom: "X",
+          d: "X par URLs collées, via FxTwitter, gratuit et sans clé. La veille ne cherche pas sur X : tu colles les tweets qui t'intéressent.",
+          p: "skill/extras/fx.mjs",
+        },
+        {
+          id: "web",
+          court: "Web",
+          c: "recol",
+          e: "depot",
+          nom: "Web et flux",
+          d: "curl et deux scripts python : flux RSS et Atom, Google News, Hacker News, Reddit, GitHub. Aucune clé, aucune dépendance hors stdlib.",
+          p: "skill/fetch_feeds.py",
+        },
+        {
+          id: "intl",
+          court: "RU·KR·CN",
+          c: "recol",
+          e: "extras",
+          nom: "RU · KR · CN",
+          d: "Chine, Corée, Russie, Yandex : V2EX, Xiaohongshu, velog, Brunch, Kakao, Habr, Telegram, VK. Chaque source a ses conditions d'accès, décrites dans la note.",
+          p: "skill/extras/sources-avancees.md",
+        },
+        {
+          id: "doctor",
+          court: "doctor",
+          c: "recol",
+          e: "depot",
+          nom: "doctor.sh",
+          d: "Avant toute récolte : un tableau SOURCE / ÉTAT / DÉTAIL / RÉPARATION. Lecture seule, zéro requête réseau, une commande de réparation par panne.",
+          p: "skill/doctor.sh",
+        },
+
+        {
+          id: "kb",
+          court: "KB",
+          c: "base",
+          e: "depot",
+          nom: "~/veille-kb",
+          large: true,
+          d: "La base : un dossier par sujet, des bruts horodatés, des notes distillées, une synthèse qui se réécrit. Dépôt git local, pour que rien ne se perde et que tout se diff.",
+          p: "$VEILLE_KB (défaut ~/veille-kb)",
+        },
+
+        {
+          id: "cherche",
+          court: "réponse",
+          c: "sort",
+          e: "depot",
+          nom: "Réponse",
+          d: "Une réponse qui ne vient que de la base, notes citées. Le skill dit franchement quand la base ne contient pas la réponse.",
+        },
+        {
+          id: "rapport",
+          court: "rapport",
+          c: "sort",
+          e: "depot",
+          nom: "Rapport",
+          d: "Le compte rendu du mode lint : ce qui se contredit, ce qui a vieilli, ce qui a perdu ses liens. Daté, rangé dans _lint-reports/.",
+        },
+        {
+          id: "feed",
+          court: "feed",
+          c: "sort",
+          e: "perso",
+          nom: "Feed du jour",
+          d: "Le feed quotidien tiré de la base. Personnel.",
+        },
+        {
+          id: "mail",
+          court: "mail",
+          c: "sort",
+          e: "perso",
+          nom: "Mail",
+          d: "L'envoi par mail des résumés au-delà d'un seuil. Personnel.",
+        },
+        {
+          id: "alerte",
+          court: "alertes",
+          c: "sort",
+          e: "perso",
+          nom: "Alertes macOS",
+          d: "Les notifications de panne : récolte sans succès depuis 48 h, lint sans rapport, sources KO. Personnel.",
+        },
+      ];
+
+      const LIENS = [
+        ["toi", "skill"],
+        ["toi", "agents"],
+        ["toi", "doom"],
+        ["launchd", "loop"],
+        ["launchd", "lint"],
+        ["launchd", "doom"],
+        ["launchd", "rs"],
+        ["hook", "kb"],
+        ["webhook", "loop"],
+        ["launchd", "yt"],
+        ["daemon", "loop"],
+        ["skill", "yt"],
+        ["skill", "bili"],
+        ["skill", "x"],
+        ["skill", "web"],
+        ["skill", "intl"],
+        ["skill", "doctor"],
+        ["loop", "yt"],
+        ["loop", "bili"],
+        ["rs", "yt"],
+        ["agents", "web"],
+        ["agents", "yt"],
+        ["yt", "kb"],
+        ["bili", "kb"],
+        ["x", "kb"],
+        ["web", "kb"],
+        ["intl", "kb"],
+        ["lint", "kb"],
+        ["doom", "kb"],
+        ["kb", "cherche"],
+        ["kb", "feed"],
+        ["kb", "rapport"],
+        ["kb", "mail"],
+        ["loop", "alerte"],
+        ["lint", "alerte"],
+      ];
+
+      const reduit = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const ecart = 5.2,
+        pas = 3.3;
+
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      } catch (e) {
+        document.getElementById("erreur").style.display = "grid";
+        throw e;
+      }
+      const hote = document.getElementById("scene");
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      hote.appendChild(renderer.domElement);
+      const etiq = new CSS2DRenderer();
+      document.getElementById("etiquettes").appendChild(etiq.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(tok("--papier"));
+      scene.fog = new THREE.Fog(tok("--papier"), 40, 85);
+      const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.autoRotate = !reduit;
+      controls.autoRotateSpeed = 0.5;
+      controls.target.set(0, 0, 0);
+
+      scene.add(new THREE.HemisphereLight(0xdde8ff, 0x1a2327, 1.1));
+      const soleil = new THREE.DirectionalLight(0xffffff, 1.3);
+      soleil.position.set(8, 20, 12);
+      scene.add(soleil);
+
+      // Plateaux
+      COUCHES.forEach((c, i) => {
+        c.y = (2 - i) * ecart;
+        const plat = new THREE.Mesh(
+          new THREE.BoxGeometry(22, 0.08, 6.5),
+          new THREE.MeshStandardMaterial({
+            color: tok("--carte"),
+            transparent: true,
+            opacity: 0.55,
+            roughness: 1,
+          }),
+        );
+        plat.position.y = c.y - 0.55;
+        scene.add(plat);
+        const bord = new THREE.LineSegments(
+          new THREE.EdgesGeometry(plat.geometry),
+          new THREE.LineBasicMaterial({ color: tok("--trait") }),
+        );
+        bord.position.copy(plat.position);
+        scene.add(bord);
+        const el = document.createElement("div");
+        el.className = "couche";
+        el.innerHTML = `<b>${c.nom}</b><br>${c.sous}`;
+        const lab = new CSS2DObject(el);
+        lab.position.set(-14.4, c.y - 0.4, 0);
+        lab.center.set(1, 0.5);
+        scene.add(lab);
+      });
+
+      // Blocs
+      const parId = {},
+        cliquables = [];
+      COUCHES.forEach((c) => {
+        const membres = NOEUDS.filter((n) => n.c === c.id);
+        membres.forEach((n, i) => {
+          const couleur = new THREE.Color(ETATS[n.e].c);
+          const l = n.large ? 12 : 2.5,
+            h = n.large ? 1.1 : 0.8,
+            p = n.large ? 3 : 1.5;
+          const geo = new THREE.BoxGeometry(l, h, p);
+          const perso = n.e === "perso";
+          const extras = n.e === "extras";
+          const mat = new THREE.MeshStandardMaterial({
+            color: couleur,
+            emissive: couleur,
+            emissiveIntensity: perso ? 0 : extras ? 0.1 : 0.18,
+            roughness: 0.55,
+            metalness: 0.05,
+            transparent: true,
+            opacity: perso ? 0.05 : extras ? 0.3 : 0.95,
+          });
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set((i - (membres.length - 1) / 2) * pas, c.y, 0);
+          const aretes = new THREE.LineSegments(
+            new THREE.EdgesGeometry(geo),
+            perso
+              ? new THREE.LineDashedMaterial({
+                  color: couleur,
+                  dashSize: 0.18,
+                  gapSize: 0.12,
+                  transparent: true,
+                })
+              : new THREE.LineBasicMaterial({
+                  color: couleur.clone().multiplyScalar(extras ? 1 : 1.3),
+                  transparent: true,
+                  opacity: extras ? 0.95 : 1,
+                }),
+          );
+          if (perso) aretes.computeLineDistances();
+          mesh.add(aretes);
+          const el = document.createElement("div");
+          el.className = "nom" + (perso ? " perso" : "");
+          el.textContent = innerWidth < 760 ? n.court || n.nom : n.nom;
+          const lab = new CSS2DObject(el);
+          lab.position.set(0, h / 2 + 0.35 + (i % 2) * 1.6, 0);
+          mesh.add(lab);
+          mesh.userData = { id: n.id };
+          Object.assign(n, {
+            mesh,
+            mat,
+            aretes,
+            el,
+            h,
+            couleur,
+            perso,
+            extras,
+          });
+          parId[n.id] = n;
+          cliquables.push(mesh);
+          scene.add(mesh);
+        });
+      });
+
+      // Liens et flux
+      const liens = LIENS.map(([a, b]) => {
+        const A = parId[a],
+          B = parId[b];
+        const decal = (B.mesh.position.x - A.mesh.position.x) * 0.15;
+        const p0 = A.mesh.position
+          .clone()
+          .add(new THREE.Vector3(0, -A.h / 2, 0));
+        const p3 = B.mesh.position
+          .clone()
+          .add(new THREE.Vector3(0, B.h / 2, 0));
+        if (B.large) p3.x = THREE.MathUtils.clamp(A.mesh.position.x, -5.5, 5.5);
+        if (A.large) p0.x = THREE.MathUtils.clamp(B.mesh.position.x, -5.5, 5.5);
+        const tombe = Math.max(1.4, (p0.y - p3.y) * 0.4);
+        const courbe = new THREE.CubicBezierCurve3(
+          p0,
+          p0.clone().add(new THREE.Vector3(decal, -tombe, 0.6)),
+          p3.clone().add(new THREE.Vector3(-decal, tombe, 0.6)),
+          p3,
+        );
+        const geo = new THREE.BufferGeometry().setFromPoints(
+          courbe.getPoints(48),
+        );
+        const couleur = A.couleur;
+        const pointille = A.perso || B.perso;
+        const mat = pointille
+          ? new THREE.LineDashedMaterial({
+              color: couleur,
+              dashSize: 0.25,
+              gapSize: 0.2,
+              transparent: true,
+              opacity: 0.6,
+            })
+          : new THREE.LineBasicMaterial({
+              color: couleur,
+              transparent: true,
+              opacity: 0.45,
+            });
+        const ligne = new THREE.Line(geo, mat);
+        if (pointille) ligne.computeLineDistances();
+        scene.add(ligne);
+        return {
+          a,
+          b,
+          pointille,
+          courbe,
+          ligne,
+          mat,
+          couleur,
+          base: mat.opacity,
+        };
+      });
+
+      const pleins = liens.filter((l) => !l.pointille);
+      const PAR_LIEN = 3;
+      const grains = new THREE.InstancedMesh(
+        new THREE.SphereGeometry(0.08, 10, 10),
+        new THREE.MeshBasicMaterial({ transparent: true }),
+        pleins.length * PAR_LIEN,
+      );
+      const tmp = new THREE.Object3D();
+      pleins.forEach((l, i) => {
+        for (let k = 0; k < PAR_LIEN; k++)
+          grains.setColorAt(i * PAR_LIEN + k, l.couleur);
+      });
+      scene.add(grains);
+
+      // Fiche et surbrillance
+      const fiche = document.getElementById("fiche");
+      const nomDe = (id) => parId[id].nom;
+      function afficher(n) {
+        if (!n) {
+          fiche.classList.add("repos");
+          fiche.style.setProperty("--c", tok("--depot"));
+          fiche.innerHTML = `<span class="nature">Mode d'emploi</span><h2>Clique un bloc</h2>
+      <p>Chaque bloc a sa fiche : ce qu'il fait, où il vit, d'où il reçoit et vers quoi il envoie.</p>
+      <p class="vide">Plein : dans ce dépôt. Contour : extras livrés en l'état. Pointillé : le setup de l'auteur, absent de ce dépôt.</p>`;
+          return;
+        }
+        const entrants = liens
+          .filter((l) => l.b === n.id)
+          .map((l) => nomDe(l.a));
+        const sortants = liens
+          .filter((l) => l.a === n.id)
+          .map((l) => nomDe(l.b));
+        const liste = (t) =>
+          t.length
+            ? `<ul>${t.map((x) => `<li>${x}</li>`).join("")}</ul>`
+            : `<p class="vide">rien</p>`;
+        fiche.classList.remove("repos");
+        fiche.style.setProperty("--c", ETATS[n.e].c);
+        fiche.innerHTML = `<span class="nature">${ETATS[n.e].nom}</span><h2>${n.nom}</h2>
+    <p>${n.d.replace(/</g, "&lt;")}</p>${n.p ? `<p><code>${n.p}</code></p>` : ""}
+    <h3>Reçoit de</h3>${liste(entrants)}<h3>Envoie vers</h3>${liste(sortants)}`;
+      }
+
+      let survol = null,
+        choisi = null,
+        seulDepot = false;
+      function surligner() {
+        const actif = survol || choisi;
+        const voisins = new Set();
+        if (actif) {
+          voisins.add(actif);
+          liens.forEach((l) => {
+            if (l.a === actif) voisins.add(l.b);
+            if (l.b === actif) voisins.add(l.a);
+          });
+        }
+        NOEUDS.forEach((n) => {
+          const masque = seulDepot && n.e !== "depot";
+          const on = !masque && (!actif || voisins.has(n.id));
+          n.mesh.visible = !masque;
+          n.mat.opacity = n.perso
+            ? on
+              ? 0.06
+              : 0.02
+            : n.extras
+              ? on
+                ? 0.3
+                : 0.08
+              : on
+                ? 0.95
+                : 0.18;
+          n.mat.emissiveIntensity = n.perso
+            ? 0
+            : n.id === actif
+              ? 0.55
+              : n.extras
+                ? 0.1
+                : 0.18;
+          n.aretes.material.opacity = on ? 1 : 0.2;
+          n.el.style.opacity = masque ? 0 : on ? 1 : 0.25;
+        });
+        liens.forEach((l) => {
+          const A = parId[l.a],
+            B = parId[l.b];
+          const masque = seulDepot && (A.e !== "depot" || B.e !== "depot");
+          l.ligne.visible = !masque;
+          const on = !actif || l.a === actif || l.b === actif;
+          l.mat.opacity = actif ? (on ? 0.95 : 0.06) : l.base;
+          l.on = on;
+        });
+      }
+
+      const ray = new THREE.Raycaster(),
+        souris = new THREE.Vector2();
+      function viser(ev) {
+        const r = renderer.domElement.getBoundingClientRect();
+        souris.set(
+          ((ev.clientX - r.left) / r.width) * 2 - 1,
+          -((ev.clientY - r.top) / r.height) * 2 + 1,
+        );
+        ray.setFromCamera(souris, camera);
+        const hit = ray.intersectObjects(cliquables, false)[0];
+        return hit ? hit.object.userData.id : null;
+      }
+      renderer.domElement.addEventListener("pointermove", (ev) => {
+        const id = viser(ev);
+        if (id !== survol) {
+          survol = id;
+          surligner();
+        }
+        renderer.domElement.style.cursor = id ? "pointer" : "grab";
+      });
+      let depart = null;
+      renderer.domElement.addEventListener("pointerdown", (ev) => {
+        depart = [ev.clientX, ev.clientY];
+      });
+      renderer.domElement.addEventListener("pointerup", (ev) => {
+        if (
+          !depart ||
+          Math.hypot(ev.clientX - depart[0], ev.clientY - depart[1]) > 5
+        )
+          return;
+        const id = viser(ev);
+        choisi = id;
+        afficher(id ? parId[id] : null);
+        surligner();
+        if (id) {
+          controls.autoRotate = false;
+          majBoutons();
+        }
+      });
+
+      // Commandes
+      const bRot = document.getElementById("b-rot"),
+        bFlux = document.getElementById("b-flux"),
+        bSeul = document.getElementById("b-seul");
+      let flux = !reduit;
+      function majBoutons() {
+        bRot.setAttribute("aria-pressed", String(controls.autoRotate));
+        bFlux.setAttribute("aria-pressed", String(flux));
+        bSeul.setAttribute("aria-pressed", String(seulDepot));
+      }
+      bRot.onclick = () => {
+        controls.autoRotate = !controls.autoRotate;
+        majBoutons();
+      };
+      bFlux.onclick = () => {
+        flux = !flux;
+        grains.visible = flux;
+        majBoutons();
+      };
+      bSeul.onclick = () => {
+        seulDepot = !seulDepot;
+        majBoutons();
+        surligner();
+      };
+      function cadrer(face) {
+        const petit = innerWidth < 760;
+        const d = petit ? 65 : 46;
+        if (petit) {
+          // Vue de face et reculée : à 390 px de large, la perspective diagonale empile les libellés.
+          camera.position.set(0, 0.5, d);
+          controls.target.set(0, 1.2, 0);
+          return;
+        }
+        if (face) camera.position.set(0, 1, d * 1.05);
+        else camera.position.set(d * 0.55, d * 0.42, d * 0.75);
+        controls.target.set(-2, 4.2, 0);
+      }
+      document.getElementById("b-face").onclick = () => {
+        controls.autoRotate = false;
+        majBoutons();
+        cadrer(true);
+      };
+      document.getElementById("b-reset").onclick = () => {
+        choisi = null;
+        afficher(null);
+        surligner();
+        cadrer(false);
+      };
+
+      function taille() {
+        const w = hote.clientWidth,
+          h = hote.clientHeight;
+        renderer.setSize(w, h);
+        etiq.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      addEventListener("resize", taille);
+      taille();
+      cadrer(false);
+      afficher(null);
+      surligner();
+      majBoutons();
+      grains.visible = flux;
+
+      const horloge = new THREE.Clock();
+      renderer.setAnimationLoop(() => {
+        const t = horloge.getElapsedTime();
+        if (flux) {
+          pleins.forEach((l, i) => {
+            for (let k = 0; k < PAR_LIEN; k++) {
+              const u = (t * 0.22 + k / PAR_LIEN + i * 0.137) % 1;
+              tmp.position.copy(l.courbe.getPointAt(u));
+              tmp.scale.setScalar(l.on === false ? 0.001 : 1);
+              tmp.updateMatrix();
+              grains.setMatrixAt(i * PAR_LIEN + k, tmp.matrix);
+            }
+          });
+          grains.instanceMatrix.needsUpdate = true;
+        }
+        controls.update();
+        renderer.render(scene, camera);
+        etiq.render(scene, camera);
+      });
+    </script>
+  </body>
+</html>
