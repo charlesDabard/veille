@@ -1,0 +1,17 @@
+[package]
+name = "ytkb"
+version = "0.2.0"
+edition = "2024"
+description = "YouTube → NDJSON transcript filter (un objet JSON par vidéo sur stdout)"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+tempfile = "3"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+[profile.release]
+lto = true
+strip = true
